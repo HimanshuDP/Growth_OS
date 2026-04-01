@@ -1,0 +1,196 @@
+
+> innovathon-growth-os@0.1.0 build
+> next build
+
+  ▲ Next.js 14.2.35
+
+   Creating an optimized production build ...
+ ⚠ Compiled with warnings
+
+./app/ads/page.tsx
+Attempted import error: 'Instagram' is not exported from '__barrel_optimize__?names=Activity,ArrowRight,Camera,IndianRupee,Instagram,MapPin,Settings,Sparkles,Target,TrendingUp,Users,Zap!=!lucide-react' (imported as 'Instagram').
+
+Import trace for requested module:
+./app/ads/page.tsx
+
+./app/captions/page.tsx
+Attempted import error: 'Instagram' is not exported from '__barrel_optimize__?names=AlertTriangle,ChevronDown,ChevronUp,Copy,Facebook,Info,Instagram,Linkedin,PartyPopper,PenTool,RotateCw,Sparkles,Tag,Twitter!=!lucide-react' (imported as 'Instagram').
+
+Import trace for requested module:
+./app/captions/page.tsx
+
+./app/captions/page.tsx
+Attempted import error: 'Linkedin' is not exported from '__barrel_optimize__?names=AlertTriangle,ChevronDown,ChevronUp,Copy,Facebook,Info,Instagram,Linkedin,PartyPopper,PenTool,RotateCw,Sparkles,Tag,Twitter!=!lucide-react' (imported as 'Linkedin').
+
+Import trace for requested module:
+./app/captions/page.tsx
+
+./app/captions/page.tsx
+Attempted import error: 'Facebook' is not exported from '__barrel_optimize__?names=AlertTriangle,ChevronDown,ChevronUp,Copy,Facebook,Info,Instagram,Linkedin,PartyPopper,PenTool,RotateCw,Sparkles,Tag,Twitter!=!lucide-react' (imported as 'Facebook').
+
+Import trace for requested module:
+./app/captions/page.tsx
+
+./app/captions/page.tsx
+Attempted import error: 'Twitter' is not exported from '__barrel_optimize__?names=AlertTriangle,ChevronDown,ChevronUp,Copy,Facebook,Info,Instagram,Linkedin,PartyPopper,PenTool,RotateCw,Sparkles,Tag,Twitter!=!lucide-react' (imported as 'Twitter').
+
+Import trace for requested module:
+./app/captions/page.tsx
+
+./app/onboard/page.tsx
+Attempted import error: 'db' is not exported from '@/lib/firebase' (imported as 'db').
+
+Import trace for requested module:
+./app/onboard/page.tsx
+
+./app/onboard/page.tsx
+Attempted import error: 'db' is not exported from '@/lib/firebase' (imported as 'db').
+
+Import trace for requested module:
+./app/onboard/page.tsx
+
+ ⚠ Compiled with warnings
+
+./app/ads/page.tsx
+Attempted import error: 'Instagram' is not exported from '__barrel_optimize__?names=Activity,ArrowRight,Camera,IndianRupee,Instagram,MapPin,Settings,Sparkles,Target,TrendingUp,Users,Zap!=!lucide-react' (imported as 'Instagram').
+
+Import trace for requested module:
+./app/ads/page.tsx
+
+./app/captions/page.tsx
+Attempted import error: 'Instagram' is not exported from '__barrel_optimize__?names=AlertTriangle,ChevronDown,ChevronUp,Copy,Facebook,Info,Instagram,Linkedin,PartyPopper,PenTool,RotateCw,Sparkles,Tag,Twitter!=!lucide-react' (imported as 'Instagram').
+
+Import trace for requested module:
+./app/captions/page.tsx
+
+./app/captions/page.tsx
+Attempted import error: 'Linkedin' is not exported from '__barrel_optimize__?names=AlertTriangle,ChevronDown,ChevronUp,Copy,Facebook,Info,Instagram,Linkedin,PartyPopper,PenTool,RotateCw,Sparkles,Tag,Twitter!=!lucide-react' (imported as 'Linkedin').
+
+Import trace for requested module:
+./app/captions/page.tsx
+
+./app/captions/page.tsx
+Attempted import error: 'Facebook' is not exported from '__barrel_optimize__?names=AlertTriangle,ChevronDown,ChevronUp,Copy,Facebook,Info,Instagram,Linkedin,PartyPopper,PenTool,RotateCw,Sparkles,Tag,Twitter!=!lucide-react' (imported as 'Facebook').
+
+Import trace for requested module:
+./app/captions/page.tsx
+
+./app/captions/page.tsx
+Attempted import error: 'Twitter' is not exported from '__barrel_optimize__?names=AlertTriangle,ChevronDown,ChevronUp,Copy,Facebook,Info,Instagram,Linkedin,PartyPopper,PenTool,RotateCw,Sparkles,Tag,Twitter!=!lucide-react' (imported as 'Twitter').
+
+Import trace for requested module:
+./app/captions/page.tsx
+
+./app/onboard/page.tsx
+Attempted import error: 'db' is not exported from '@/lib/firebase' (imported as 'db').
+
+Import trace for requested module:
+./app/onboard/page.tsx
+
+./app/onboard/page.tsx
+Attempted import error: 'db' is not exported from '@/lib/firebase' (imported as 'db').
+
+Import trace for requested module:
+./app/onboard/page.tsx
+
+ ✓ Compiled successfully
+   Linting and checking validity of types ...
+
+Failed to compile.
+
+./app/ads/page.tsx
+7:11  Error: 'Clock' is defined but never used.  @typescript-eslint/no-unused-vars
+13:10  Error: 'profile' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+13:42  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+15:46  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+112:20  Error: 'Loader2' is not defined.  react/jsx-no-undef
+186:137  Error: 'PenTool' is not defined.  react/jsx-no-undef
+189:148  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+189:152  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+
+./app/api/performance-data/route.ts
+48:27  Error: 'request' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./app/calendar/page.tsx
+13:42  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+14:44  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+16:71  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+17:50  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+69:30  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+131:169  Error: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+133:34  Error: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+194:88  Error: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+243:29  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./app/captions/page.tsx
+13:42  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+20:44  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+21:42  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+67:59  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+108:70  Error: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+160:30  Error: 'Loader2' is not defined.  react/jsx-no-undef
+258:110  Error: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+
+./app/dashboard/page.tsx
+6:27  Error: 'XAxis' is defined but never used.  @typescript-eslint/no-unused-vars
+11:25  Error: 'getUpcomingFestivals' is defined but never used.  @typescript-eslint/no-unused-vars
+16:42  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+18:58  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+19:52  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+26:50  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+85:68  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+88:53  Error: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+118:20  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+118:209  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+177:71  Error: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+292:16  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+292:27  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+
+./app/festivals/page.tsx
+13:42  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+15:46  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+207:70  Error: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+
+./app/onboard/page.tsx
+7:10  Error: 'Building2' is defined but never used.  @typescript-eslint/no-unused-vars
+7:21  Error: 'Globe' is defined but never used.  @typescript-eslint/no-unused-vars
+7:28  Error: 'Users' is defined but never used.  @typescript-eslint/no-unused-vars
+7:35  Error: 'Target' is defined but never used.  @typescript-eslint/no-unused-vars
+351:67  Error: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+
+./app/page.tsx
+145:155  Error: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+229:81  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+229:215  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+240:81  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+240:216  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+251:81  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+251:226  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+254:71  Error: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+
+./app/performance/page.tsx
+6:3  Error: 'LineChart' is defined but never used.  @typescript-eslint/no-unused-vars
+6:14  Error: 'Line' is defined but never used.  @typescript-eslint/no-unused-vars
+10:13  Error: 'Lightbulb' is defined but never used.  @typescript-eslint/no-unused-vars
+12:10  Error: 'FALLBACK_DATA' is defined but never used.  @typescript-eslint/no-unused-vars
+16:42  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+18:36  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+52:32  Error: 'aiInsight' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+168:20  Error: 'Sparkles' is not defined.  react/jsx-no-undef
+173:143  Error: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+
+./app/settings/page.tsx
+4:46  Error: 'Bell' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./lib/fallback-data.ts
+206:37  Error: 'desc' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./lib/firebase.ts
+107:41  Error: 'businessId' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./lib/gemini.ts
+22:48  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+35:12  Error: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+89:21  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/basic-features/eslint#disabling-rules
