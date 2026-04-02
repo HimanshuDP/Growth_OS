@@ -29,6 +29,7 @@ const firebaseConfig = {
 
 // ─── Lazy initialization ──────────────────────────────────────────────────────
 
+export let firebaseApp: FirebaseApp | null = null;
 export let app: FirebaseApp | null = null;
 export let db: Firestore | null = null;
 
@@ -36,15 +37,16 @@ function getFirebaseApp(): FirebaseApp | null {
   if (!firebaseConfig.apiKey || !firebaseConfig.projectId) return null;
   if (!app) {
     app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+    firebaseApp = app; // alias export
   }
   return app;
 }
 
 function getDB(): Firestore | null {
   if (db) return db;
-  const firebaseApp = getFirebaseApp();
-  if (!firebaseApp) return null;
-  db = getFirestore(firebaseApp);
+  const fbApp = getFirebaseApp();
+  if (!fbApp) return null;
+  db = getFirestore(fbApp);
   return db;
 }
 
@@ -130,4 +132,44 @@ export async function getLatestCalendar(businessId: string): Promise<WeeklyCalen
   const snap = await getDocs(q);
   if (snap.empty) return null;
   return snap.docs[0].data() as WeeklyCalendar;
+}
+
+// ─── Social Tokens CRUD (for Post-to-Social feature) ─────────────────────────
+
+export async function saveSocialTokens(tokens: Record<string, any>): Promise<void> {
+  const database = getDB();
+  const tokenStr = JSON.stringify(tokens);
+  localStorage.setItem('growthOS_socialTokens', tokenStr);
+
+  if (!database) return;
+  try {
+    await setDoc(doc(database, 'socialTokens', 'default'), tokens);
+  } catch (err) {
+    console.warn('Firestore token save failed, using localStorage:', err);
+  }
+}
+
+export async function getSocialTokens(): Promise<Record<string, any>> {
+  // Try localStorage first
+  try {
+    const stored = localStorage.getItem('growthOS_socialTokens');
+    if (stored) return JSON.parse(stored);
+  } catch { /* continue */ }
+
+  const database = getDB();
+  if (!database) return {};
+
+  try {
+    const snap = await getDoc(doc(database, 'socialTokens', 'default'));
+    if (snap.exists()) return snap.data() as Record<string, any>;
+  } catch (err) {
+    console.warn('Firestore token fetch failed:', err);
+  }
+  return {};
+}
+
+export async function deleteSocialToken(platform: string): Promise<void> {
+  const tokens = await getSocialTokens();
+  delete tokens[platform];
+  await saveSocialTokens(tokens);
 }
