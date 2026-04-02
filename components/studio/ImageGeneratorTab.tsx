@@ -209,13 +209,8 @@ export default function ImageGeneratorTab() {
                         onLoad={() => setLoadedImages(prev => ({ ...prev, [i]: true }))}
                         onError={(e) => {
                           setLoadedImages(prev => ({...prev, [i]: true}));
-                          const fallbackImages = [
-                            "https://thumbs.dreamstime.com/b/diwali-lamps-indian-sweets-mithai-11373221.jpg",
-                            "https://www.shutterstock.com/image-photo/diwali-sweets-arranged-plate-diya-flowers-260nw-1219832641.jpg",
-                            "https://thumbs.dreamstime.com/b/diwali-sweets-45731735.jpg",
-                            `https://loremflickr.com/${format.width}/${format.height}/diwali,celebration,sweets?lock=${i + 10}`
-                          ];
-                          (e.target as HTMLImageElement).src = fallbackImages[i % 4];
+                          // Fallback to beautiful Diwali placeholder since Pollinations API is offline
+                          (e.target as HTMLImageElement).src = `https://thumbs.dreamstime.com/b/diwali-lamps-indian-sweets-mithai-11373221.jpg`;
                         }}
                         className={`w-full h-full object-cover transition-opacity duration-500 ${loadedImages[i] ? 'opacity-100' : 'opacity-0'}`}
                       />
