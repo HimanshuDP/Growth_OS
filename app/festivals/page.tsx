@@ -7,6 +7,9 @@ import {
   MapPin, Flame, CheckCircle2, ChevronRight, X
 } from 'lucide-react';
 import { FALLBACK_DATA } from '@/lib/fallback-data';
+import { buildVariationUrls, downloadPollinationsImage, SOCIAL_FORMATS } from '@/lib/pollinations';
+import { Download, ImageIcon } from 'lucide-react';
+
 
 export default function FestivalsPage() {
   const router = useRouter();
@@ -18,6 +21,11 @@ export default function FestivalsPage() {
   const [activeRegion, setActiveRegion] = useState('All India');
   
   const [selectedTrend, setSelectedTrend] = useState<string | null>(null);
+
+  // Pollinations state
+  const [generatingFor, setGeneratingFor] = useState<string | null>(null);
+  const [festivalVisuals, setFestivalVisuals] = useState<{fest: any, urls: string[]} | null>(null);
+  const [selectedVisual, setSelectedVisual] = useState<string | null>(null);
 
   useEffect(() => {
     const rawProfile = localStorage.getItem('growthOS_businessProfile');
@@ -189,8 +197,25 @@ export default function FestivalsPage() {
                          </div>
                        </div>
                        
-                       <div className="mt-auto pt-4 border-t border-slate-800">
-                         <p className="text-xs text-slate-500 mb-4"><strong>Visuals:</strong> {fest.visualRecommendation || "Festive colors with product focus."}</p>
+                       <div className="mt-auto pt-4 border-t border-slate-800 space-y-3">
+                         <button 
+                           onClick={async () => {
+                              setGeneratingFor(fest.name || fest.festival);
+                              try {
+                                const prompt = `Festive ${fest.festival || fest.name} celebration, Indian family, diyas/flowers/decorations relevant to festival, warm golden lighting, professional advertising photography, brand overlay space, 4k quality`;
+                                const urls = buildVariationUrls(prompt, SOCIAL_FORMATS.find(f => f.name === 'instagram_post')!, 4, 'flux');
+                                setFestivalVisuals({ fest, urls });
+                              } catch(e) {
+                                alert("Failed to generate visuals");
+                              } finally {
+                                setGeneratingFor(null);
+                              }
+                           }}
+                           className="w-full py-3 bg-brand-orange text-white font-bold rounded-xl hover:bg-brand-orange/80 transition-colors flex items-center justify-center gap-2"
+                         >
+                            {generatingFor === (fest.name || fest.festival) ? <Loader2 className="w-4 h-4 animate-spin"/> : <ImageIcon className="w-4 h-4"/>}
+                            Generate Festival Creative
+                         </button>
                          <button onClick={() => { localStorage.setItem('growthOS_captionContext', `Tying my product to ${fest.festival || fest.name}`); router.push('/captions'); }} className="w-full py-3 bg-white text-slate-900 font-bold rounded-xl hover:bg-slate-200 transition-colors flex items-center justify-center gap-2">
                             Open in Caption Generator <ChevronRight className="w-4 h-4"/>
                          </button>
@@ -241,6 +266,64 @@ export default function FestivalsPage() {
                </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Festival Creative Modal */}
+      {festivalVisuals && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md" onClick={() => festivalVisuals && !selectedVisual && setFestivalVisuals(null)}>
+           <div className="bg-slate-900 border border-brand-orange/30 w-full max-w-2xl rounded-3xl p-8 shadow-2xl animate-in zoom-in-95 duration-300 relative" onClick={e => e.stopPropagation()}>
+              <button onClick={() => {setFestivalVisuals(null); setSelectedVisual(null);}} className="absolute top-4 right-4 p-2 hover:bg-white/10 rounded-full text-white/50"><X size={20}/></button>
+
+              <h3 className="text-2xl font-black text-white mb-2 flex items-center gap-3">
+                 <Sparkles className="text-brand-orange" /> {festivalVisuals.fest.festival || festivalVisuals.fest.name} Creatives
+              </h3>
+              <p className="text-sm text-white/60 mb-6">Generated exclusively for {profile.name} using Flux.1</p>
+              
+              {!selectedVisual ? (
+                <div className="grid grid-cols-2 gap-4">
+                  {festivalVisuals.urls.map((url, i) => (
+                    <div key={i} onClick={() => setSelectedVisual(url)} className="aspect-square bg-slate-800 rounded-2xl overflow-hidden cursor-pointer border-2 border-transparent hover:border-brand-orange transition-all group relative">
+                       {/* eslint-disable-next-line @next/next/no-img-element */}
+                       <img src={url} alt="Fest" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                       <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black to-transparent opacity-0 group-hover:opacity-100 flex justify-center">
+                           <span className="text-xs font-bold text-white uppercase bg-brand-orange px-3 py-1 rounded-full shadow-lg">Select</span>
+                       </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col md:flex-row gap-6">
+                   <div className="w-full md:w-1/2 aspect-square rounded-2xl overflow-hidden border border-white/10 relative">
+                     {/* eslint-disable-next-line @next/next/no-img-element */}
+                     <img src={selectedVisual} alt="Selected Fest" className="w-full h-full object-cover" />
+                   </div>
+                   <div className="flex-1 flex flex-col justify-center space-y-4">
+                     <button onClick={async () => {
+                        const blob = await downloadPollinationsImage(selectedVisual);
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `growthos_${festivalVisuals.fest.festival || 'fest'}.png`;
+                        a.click();
+                     }} className="w-full py-4 bg-brand-orange text-white font-black text-lg rounded-xl hover:bg-brand-orange/80 shadow-lg shadow-brand-orange/20 flex justify-center items-center gap-2">
+                        <Download size={20}/> Save Image
+                     </button>
+                     <button onClick={() => {
+                        // In a real app we'd dispatch to context
+                        alert('Assigned to campaign!');
+                        setFestivalVisuals(null);
+                        setSelectedVisual(null);
+                     }} className="w-full py-4 bg-white text-black font-black text-lg rounded-xl hover:bg-slate-200 transition-colors">
+                        Use for Campaign
+                     </button>
+                     <button onClick={() => setSelectedVisual(null)} className="mt-4 text-sm font-bold text-white/40 hover:text-white transition-colors">
+                        ← Back to variations
+                     </button>
+                   </div>
+                </div>
+              )}
+           </div>
         </div>
       )}
     </div>

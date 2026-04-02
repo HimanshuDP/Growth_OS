@@ -8,8 +8,13 @@ import {
   Sparkles, Calendar, PenTool, PartyPopper, BarChart3, 
   ChevronDown, ChevronUp, Bell, TrendingUp, Lightbulb, X
 } from 'lucide-react';
-import { FALLBACK_DATA, getUpcomingFestivals } from '@/lib/fallback-data';
+import { FALLBACK_DATA } from '@/lib/fallback-data';
 import { Festival } from '@/lib/festivals-india';
+import dynamic from 'next/dynamic';
+
+const OptimalTimeWidget = dynamic(() => import('@/components/ml/OptimalTimeWidget'), { ssr: false });
+const AutopilotCommandCenter = dynamic(() => import('@/components/AutopilotCommandCenter'), { ssr: false });
+const StudioQuickAccess = dynamic(() => import('@/components/StudioQuickAccess'), { ssr: false });
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -54,9 +59,23 @@ export default function DashboardPage() {
       })
       .catch(() => setDailyTip("Consistency is key. Stand out with authentic brand stories."));
 
-    // Fetch calendar if it exists in local storage
     const storedCal = localStorage.getItem('growthOS_calendar');
-    if (storedCal) setCalendarData(JSON.parse(storedCal));
+    try {
+      if (storedCal) {
+        const parsed = JSON.parse(storedCal);
+        if (Array.isArray(parsed)) {
+          setCalendarData(parsed);
+        } else if (parsed && parsed.calendar && Array.isArray(parsed.calendar)) {
+          setCalendarData(parsed.calendar);
+        } else if (parsed && parsed.data && Array.isArray(parsed.data)) {
+          setCalendarData(parsed.data);
+        } else {
+          setCalendarData([]);
+        }
+      }
+    } catch(e) {
+      setCalendarData([]);
+    }
 
     // Dynamic import to avoid SSR issues with 'lib/festivals-india' dates
     import('@/lib/festivals-india').then(module => {
@@ -73,24 +92,12 @@ export default function DashboardPage() {
     window.location.reload();
   };
 
-  if (loading || !profile) return <div className="min-h-screen bg-[#0F172A] p-8 flex items-center justify-center"><div className="animate-spin w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full"></div></div>;
+  if (loading || !profile) return <div className="p-8 flex items-center justify-center"><div className="animate-spin w-8 h-8 border-4 border-brand-orange border-t-transparent rounded-full"></div></div>;
 
   return (
-    <div className="min-h-screen bg-[#0F172A] text-slate-200 p-4 md:p-8 font-sans pb-24">
-      {/* Demo Bar */}
-      {showDemoBar && (
-        <div className="bg-indigo-600/20 border border-indigo-500/30 text-indigo-200 rounded-xl p-3 mb-8 flex justify-between items-center text-sm relative z-50">
-          <div className="flex items-center gap-3">
-             <span className="font-semibold">Demo Mode</span>
-             <select onChange={(e) => loadSample(e.target.value as any)} className="bg-slate-900 border border-slate-700 rounded px-2 py-1 outline-none text-slate-300">
-                <option value="mumbaiMithai">Mumbai Mithai House (B2C)</option>
-                <option value="techVenture">TechVenture Solutions (B2B)</option>
-                <option value="priyasBoutique">Priya's Boutique (D2C)</option>
-             </select>
-          </div>
-          <button onClick={() => setShowDemoBar(false)}><X className="w-4 h-4 hover:text-white"/></button>
-        </div>
-      )}
+    <div className="text-slate-200 p-4 md:p-6 pb-24">
+      {/* ═══ AUTOPILOT COMMAND CENTER ═══ */}
+      <AutopilotCommandCenter />
 
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* LEFT COLUMN */}
@@ -169,6 +176,11 @@ export default function DashboardPage() {
                <div className="w-12 h-12 rounded-full bg-blue-500/10 text-blue-400 flex items-center justify-center group-hover:scale-110 transition-transform"><BarChart3 className="w-6 h-6"/></div>
                <span className="text-sm font-medium">Ad<br/>Performance</span>
             </Link>
+          </div>
+
+          {/* Quick Studio Access */}
+          <div className="pt-2">
+            <StudioQuickAccess />
           </div>
 
           {/* This Week's Content */}
@@ -266,7 +278,7 @@ export default function DashboardPage() {
             {/* Micro Chart */}
             <div className="h-32 w-full">
               {performanceData.length > 0 && (
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1} key={performanceData.length > 0 ? 'chart-ready' : 'chart-loading'}>
                   <AreaChart data={performanceData}>
                     <defs>
                       <linearGradient id="colorReach" x1="0" y1="0" x2="0" y2="1">
@@ -281,6 +293,9 @@ export default function DashboardPage() {
               )}
             </div>
           </div>
+
+          {/* ═══ ML MODULE 5: OPTIMAL TIME WIDGET ═══ */}
+          <OptimalTimeWidget industry={profile?.industry || 'retail'} compact={true} />
 
           {/* Daily Insight */}
           <div className="bg-gradient-to-br from-indigo-900/40 to-slate-900 border border-indigo-500/20 rounded-2xl p-6">

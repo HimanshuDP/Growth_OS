@@ -56,12 +56,14 @@ Return ONLY JSON:
     try {
       const { text, source } = await callGemini(prompt, true);
       const data = parseGeminiJSON(text);
-      return NextResponse.json({ source, data: data.campaigns || data, timestamp });
+      // Ensure we return an array of campaigns under the 'data' key for the frontend
+      const campaignArray = data.campaigns || (Array.isArray(data) ? data : []);
+      return NextResponse.json({ source, data: campaignArray, timestamp });
     } catch (aiError) {
       console.error('Gemini ad-recommendations error:', aiError);
       return NextResponse.json({ 
         source: 'fallback', 
-        data: FALLBACK_DATA.businesses.techVenture.ads,
+        data: (FALLBACK_DATA.businesses as any).mumbaiMithai.ads,
         timestamp 
       });
     }
@@ -69,7 +71,7 @@ Return ONLY JSON:
     console.error('ad-recommendations fatal error:', error);
     return NextResponse.json({ 
       source: 'fallback', 
-      data: FALLBACK_DATA.businesses.techVenture.ads,
+      data: (FALLBACK_DATA.businesses as any).mumbaiMithai.ads,
       timestamp 
     });
   }

@@ -1,17 +1,19 @@
 export default function LoadingSpinner({ size = 'md', text }: { size?: 'sm' | 'md' | 'lg'; text?: string }) {
-  const sizeClasses = {
-    sm: 'w-5 h-5 border-2',
-    md: 'w-8 h-8 border-[3px]',
-    lg: 'w-12 h-12 border-4',
+  const dotSize = {
+    sm: 'w-1.5 h-1.5',
+    md: 'w-2.5 h-2.5',
+    lg: 'w-4 h-4',
   };
 
   return (
-    <div className="flex flex-col items-center justify-center gap-3 py-8">
-      <div
-        className={`${sizeClasses[size]} rounded-full border-indigo-500/30 border-t-indigo-400 animate-spin`}
-      />
+    <div className="flex flex-col items-center justify-center gap-4 py-8">
+      <div className="flex items-center gap-2">
+        <div className={`${dotSize[size]} rounded-full bg-brand-orange dot-pulse [animation-delay:-0.3s]`} />
+        <div className={`${dotSize[size]} rounded-full bg-brand-orange dot-pulse [animation-delay:-0.15s]`} />
+        <div className={`${dotSize[size]} rounded-full bg-brand-orange dot-pulse`} />
+      </div>
       {text && (
-        <p className="text-sm text-slate-400 animate-pulse">{text}</p>
+        <p className="text-sm font-medium text-text-muted uppercase tracking-widest animate-pulse">{text}</p>
       )}
     </div>
   );

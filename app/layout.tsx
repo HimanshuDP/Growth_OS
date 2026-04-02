@@ -1,13 +1,21 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
-import './globals.css';
+import { Inter, Plus_Jakarta_Sans } from 'next/font/google';
+import '../styles/globals.css';
 import AppLayoutWrapper from '@/components/AppLayoutWrapper';
 import { DemoProvider } from '@/context/DemoContext';
+import { AutopilotProvider } from '@/context/AutopilotContext';
 import { Toaster } from 'react-hot-toast';
+import PageBackground from '@/components/PageBackground';
 
 const inter = Inter({
   subsets: ['latin'],
   variable: '--font-inter',
+  display: 'swap',
+});
+
+const plusJakarta = Plus_Jakarta_Sans({
+  subsets: ['latin'],
+  variable: '--font-jakarta',
   display: 'swap',
 });
 
@@ -32,28 +40,31 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className="dark scroll-smooth">
-      <body className={`${inter.variable} font-sans antialiased bg-slate-950 text-white`}>
+      <body className={`${inter.variable} ${plusJakarta.variable} font-sans antialiased text-[#F0F4FF]`}>
+        <PageBackground />
         <DemoProvider>
-          <Toaster 
-            position="top-right" 
-            toastOptions={{
-              duration: 3000,
-              style: {
-                background: '#1e1b4b',
-                color: '#fff',
-                border: '1px solid rgba(79, 70, 229, 0.2)',
-              },
-              success: {
-                iconTheme: {
-                  primary: '#10b981',
-                  secondary: '#fff',
+          <AutopilotProvider>
+            <Toaster
+              position="top-right"
+              toastOptions={{
+                duration: 3000,
+                style: {
+                  background: '#162040',
+                  color: '#F0F4FF',
+                  border: '1px solid rgba(255, 107, 53, 0.2)',
                 },
-              },
-            }}
-          />
-          <AppLayoutWrapper>
-            {children}
-          </AppLayoutWrapper>
+                success: {
+                  iconTheme: {
+                    primary: '#00C9A7',
+                    secondary: '#fff',
+                  },
+                },
+              }}
+            />
+            <AppLayoutWrapper>
+              {children}
+            </AppLayoutWrapper>
+          </AutopilotProvider>
         </DemoProvider>
       </body>
     </html>

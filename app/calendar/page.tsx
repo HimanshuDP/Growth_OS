@@ -13,6 +13,11 @@ import { CalendarSkeleton } from '@/components/Skeletons';
 import LoadingOverlay from '@/components/LoadingOverlay';
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import dynamic from 'next/dynamic';
+
+const ContentPillarBadge = dynamic(() => import('@/components/ml/ContentPillarBadge'), { ssr: false });
+const OptimalTimeWidget = dynamic(() => import('@/components/ml/OptimalTimeWidget'), { ssr: false });
+import { buildAIImagePrompt, buildVariationUrls, SOCIAL_FORMATS, getProxiedImageUrl } from '@/lib/pollinations';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -25,8 +30,12 @@ export default function CalendarPage() {
   const [calendar, setCalendar] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [source, setSource] = useState<'ai' | 'cached' | 'fallback' | null>(null);
-  const [unsplashImages, setUnsplashImages] = useState<Record<string, any[]>>({});
   const [selectedDay, setSelectedDay] = useState<any>(null);
+
+  // Pollinations state
+  const [generatingVisuals, setGeneratingVisuals] = useState<boolean>(false);
+  const [generatedVisuals, setGeneratedVisuals] = useState<string[]>([]);
+  const [selectedVisual, setSelectedVisual] = useState<string | null>(null);
 
   useEffect(() => {
     const rawProfile = localStorage.getItem('growthOS_businessProfile');
@@ -38,9 +47,17 @@ export default function CalendarPage() {
     
     const storedCal = localStorage.getItem('growthOS_calendar');
     const storedSource = localStorage.getItem('growthOS_calendar_source');
-    if (storedCal) {
-      setCalendar(JSON.parse(storedCal));
-      setSource(storedSource as any || 'cached');
+    try {
+      if (storedCal) {
+        const parsed = JSON.parse(storedCal);
+        if (Array.isArray(parsed)) setCalendar(parsed);
+        else if (parsed?.calendar && Array.isArray(parsed.calendar)) setCalendar(parsed.calendar);
+        else if (parsed?.data && Array.isArray(parsed.data)) setCalendar(parsed.data);
+        else setCalendar([]);
+        setSource(storedSource as any || 'cached');
+      }
+    } catch(e) {
+      setCalendar([]);
     }
   }, [router]);
 
@@ -71,9 +88,10 @@ export default function CalendarPage() {
       const elapsed = Date.now() - startTime;
       if (elapsed < 1500) await new Promise(r => setTimeout(r, 1500 - elapsed));
 
-      setCalendar(data.data);
+      const actualData = Array.isArray(data.data) ? data.data : (data.data?.calendar || []);
+      setCalendar(actualData);
       setSource(data.source);
-      localStorage.setItem('growthOS_calendar', JSON.stringify(data.data));
+      localStorage.setItem('growthOS_calendar', JSON.stringify(actualData));
       localStorage.setItem('growthOS_calendar_source', data.source);
       
       toast.success(`Calendar generated for the week of ${new Date().toLocaleDateString()}`);
@@ -86,17 +104,6 @@ export default function CalendarPage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const fetchImages = async (keyword: string) => {
-    if (unsplashImages[keyword]) return;
-    const key = process.env.NEXT_PUBLIC_UNSPLASH_ACCESS_KEY;
-    if (!key) return; 
-    try {
-      const res = await fetch(`https://api.unsplash.com/search/photos?query=${encodeURIComponent(keyword)}&per_page=3&client_id=${key}`);
-      const data = await res.json();
-      setUnsplashImages(prev => ({...prev, [keyword]: data.results}));
-    } catch(e) { console.error('Unsplash Error', e); }
   };
 
   const copyToClipboard = (text: string, label: string = 'Content') => {
@@ -188,8 +195,9 @@ export default function CalendarPage() {
               <div 
                 key={idx} 
                 onClick={() => {
-                  setSelectedDay(day);
-                  if (day.imageKeyword) fetchImages(day.imageKeyword);
+                   setSelectedDay(day);
+                   setGeneratedVisuals([]);
+                   setSelectedVisual(day.pollinationsImg || null);
                 }}
                 className="group relative bg-slate-900/50 hover:bg-slate-900 border border-white/5 hover:border-indigo-500/30 rounded-3xl p-5 transition-all duration-300 cursor-pointer hover:shadow-2xl hover:shadow-indigo-500/10 min-h-[420px] flex flex-col"
               >
@@ -230,6 +238,13 @@ export default function CalendarPage() {
         )}
       </div>
 
+      {/* ═══ ML MODULE 5: OPTIMAL TIME WIDGET ═══ */}
+      {!loading && (
+        <div className="mt-6">
+          <OptimalTimeWidget industry={profile?.industry || 'retail'} />
+        </div>
+      )}
+
       {/* Slide-over panel for day details */}
       {selectedDay && (
         <>
@@ -249,9 +264,18 @@ export default function CalendarPage() {
                 {/* Rationale Block */}
                 {selectedDay.rationale && (
                   <div className="bg-indigo-500/10 border border-indigo-500/20 p-6 rounded-3xl text-sm text-indigo-200 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 p-3 opacity-10"><BrainCircuit size={48} /></div>
                     <span className="font-black uppercase tracking-widest text-[10px] text-indigo-400 flex items-center gap-1.5 mb-3"><Sparkles size={14}/> AI Reasoning & Strategy</span>
                     <p className="font-medium leading-relaxed italic">"{selectedDay.rationale}"</p>
+                  </div>
+                )}
+
+                {/* ═══ ML MODULE 4: CONTENT PILLAR CLASSIFIER ═══ */}
+                {selectedDay.caption && (
+                  <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5">
+                    <ContentPillarBadge
+                      captionText={selectedDay.caption}
+                      aiSuggestedPillar={selectedDay.contentPillar}
+                    />
                   </div>
                 )}
 
@@ -295,36 +319,73 @@ export default function CalendarPage() {
                   </div>
                 </div>
 
-                {/* Unsplash Image Suggestions */}
-                {selectedDay.imageKeyword && (
-                  <div className="space-y-5">
-                    <h3 className="text-xs font-black text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2">
-                       <ImageIcon size={16}/> Visual Production <span className="text-[10px] font-black text-indigo-500/60 lowercase italic tracking-normal md:ml-2"># {selectedDay.imageKeyword}</span>
-                    </h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                      {unsplashImages[selectedDay.imageKeyword] ? (
-                        unsplashImages[selectedDay.imageKeyword].map((img, i) => (
-                          <div 
-                            key={i} 
-                            className="aspect-[4/5] bg-white/5 rounded-[1.5rem] overflow-hidden border border-white/10 relative group cursor-pointer shadow-lg" 
-                            onClick={() => window.open(img.links.html, '_blank')}
-                          >
-                            <img src={img.urls.small} alt={img.alt_description} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"/>
-                            <div className="absolute inset-0 bg-indigo-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center p-4">
-                               <Download className="w-8 h-8 text-white mb-2"/>
-                               <span className="text-[10px] font-black text-white uppercase tracking-widest">Download Full-Res</span>
-                            </div>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="col-span-3 h-32 flex flex-col items-center justify-center text-center p-4 bg-white/[0.02] rounded-3xl border border-white/5">
-                           <Loader2 className="w-6 h-6 animate-spin text-indigo-500/50 mb-2" />
-                           <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Curating visual inspiration...</p>
+                {/* Pollinations AI Integration */}
+                <div className="space-y-4">
+                  <h3 className="text-xs font-black text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2">
+                     <ImageIcon size={16}/> AI Visual Production
+                  </h3>
+                  
+                  {selectedVisual ? (
+                     <div className="aspect-square bg-slate-800 rounded-2xl overflow-hidden border border-white/10 relative group">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={getProxiedImageUrl(selectedVisual)} alt="Generated post" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                           <a href={selectedVisual} download className="p-3 bg-white text-black font-bold rounded-xl flex items-center gap-2">
+                             <Download size={16} /> Save Image
+                           </a>
+                           <button onClick={() => setSelectedVisual(null)} className="p-3 bg-red-500 text-white font-bold rounded-xl flex items-center gap-2">
+                             Remove
+                           </button>
                         </div>
-                      )}
-                    </div>
-                  </div>
-                )}
+                     </div>
+                  ) : (
+                     <>
+                        <button 
+                          disabled={generatingVisuals}
+                          className="w-full py-4 bg-brand-orange hover:bg-brand-orange/80 text-white font-bold rounded-2xl flex justify-center items-center gap-2 transition-all disabled:opacity-50"
+                          onClick={async () => {
+                             setGeneratingVisuals(true);
+                             try {
+                                const prompt = await buildAIImagePrompt(
+                                   profile.name, profile.industry, selectedDay.theme, profile.brandTone || 'Professional', selectedDay.festivalHook || null, 'vibrant'
+                                );
+                                const format = SOCIAL_FORMATS.find(f => f.name === 'instagram_post')!;
+                                const urls = buildVariationUrls(prompt, format, 4, 'flux');
+                                setGeneratedVisuals(urls);
+                             } catch(err) {
+                               toast.error("Failed to generate visuals");
+                             } finally {
+                               setGeneratingVisuals(false);
+                             }
+                          }}
+                        >
+                           {generatingVisuals ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} />}
+                           {generatingVisuals ? "Crafting Visuals with Flux AI..." : "Generate Post Image (Free)"}
+                        </button>
+
+                        {generatedVisuals.length > 0 && (
+                          <div className="grid grid-cols-2 gap-3 mt-4">
+                            {generatedVisuals.map((url, i) => (
+                               <div key={i} className="aspect-square bg-slate-800 rounded-xl overflow-hidden relative cursor-pointer group" onClick={() => {
+                                  setSelectedVisual(url);
+                                  // Assign to day in state and local storage
+                                  const updated = calendar.map(d => d.date === selectedDay.date ? {...d, pollinationsImg: url} : d);
+                                  setCalendar(updated);
+                                  localStorage.setItem('growthOS_calendar', JSON.stringify(updated));
+                               }}>
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                                  <img src={getProxiedImageUrl(url)} alt={`gen-${i}`} referrerPolicy="no-referrer" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                                  <div className="absolute inset-x-0 bottom-0 p-2 bg-gradient-to-t from-black to-transparent opacity-0 group-hover:opacity-100 flex justify-center">
+                                     <span className="text-xs font-bold text-white uppercase bg-brand-orange px-2 py-1 rounded">Select</span>
+                                  </div>
+                               </div>
+                            ))}
+                          </div>
+                        )}
+                     </>
+                  )}
+                </div>
+
              </div>
 
           </div>

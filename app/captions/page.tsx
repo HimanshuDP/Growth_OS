@@ -1,12 +1,19 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   PenTool, Camera, Users, Briefcase, MessageSquare, Sparkles, 
   Copy, RotateCw, AlertTriangle, PartyPopper, Tag, Info, ChevronDown, ChevronUp, Loader2
 } from 'lucide-react';
 import { FALLBACK_DATA } from '@/lib/fallback-data';
+import dynamic from 'next/dynamic';
+
+import JSZip from 'jszip';
+import { buildAIImagePrompt, buildVariationUrls, downloadPollinationsImage, SOCIAL_FORMATS } from '@/lib/pollinations';
+import { ImageIcon, Download } from 'lucide-react';
+const EngagementScore = dynamic(() => import('@/components/ml/EngagementScore'), { ssr: false });
+const HashtagAnalyzer = dynamic(() => import('@/components/ml/HashtagAnalyzer'), { ssr: false });
 
 export default function CaptionsPage() {
   const router = useRouter();
@@ -20,6 +27,14 @@ export default function CaptionsPage() {
   const [captions, setCaptions] = useState<any[]>([]);
   const [history, setHistory] = useState<any[]>([]);
   const [showHistory, setShowHistory] = useState(false);
+  // Track live textarea values for ML scoring
+  const [liveTexts, setLiveTexts] = useState<string[]>([]);
+
+  // Studio states for captions
+  const [generatingVisualFor, setGeneratingVisualFor] = useState<number | null>(null);
+  const [generatedVisualsMap, setGeneratedVisualsMap] = useState<Record<number, string[]>>({});
+  const [selectedVisualMap, setSelectedVisualMap] = useState<Record<number, string | null>>({});
+  const [zippingFor, setZippingFor] = useState<number | null>(null);
 
   useEffect(() => {
     const rawProfile = localStorage.getItem('growthOS_businessProfile');
@@ -52,6 +67,7 @@ export default function CaptionsPage() {
          await new Promise(r => setTimeout(r, 1500));
          const c = FALLBACK_DATA.businesses.mumbaiMithai.captions;
          setCaptions(c);
+         setLiveTexts(c.map((v: any) => v.caption + '\n\n' + (v.hashtags?.join(' ') || '')));
          saveToHistory(finalDescription, c);
       } else {
         const res = await fetch('/api/generate-captions', {
@@ -61,6 +77,7 @@ export default function CaptionsPage() {
         });
         const data = await res.json();
         setCaptions(data.data);
+        setLiveTexts(data.data.map((v: any) => v.caption + '\n\n' + (v.hashtags?.join(' ') || '')));
         saveToHistory(finalDescription, data.data);
       }
     } catch (e) {
@@ -68,11 +85,14 @@ export default function CaptionsPage() {
       alert('Failed to generate captions.');
     }
     setLoading(false);
+    // Reset visual map
+    setGeneratedVisualsMap({});
+    setSelectedVisualMap({});
   };
 
   const saveToHistory = (desc: string, generatedCaptions: any[]) => {
      const newRecord = { id: Date.now(), timestamp: new Date().toISOString(), description: desc, captions: generatedCaptions, platform };
-     const newHistory = [newRecord, ...history].slice(0, 5); // Keep last 5
+     const newHistory = [newRecord, ...history].slice(0, 5);
      setHistory(newHistory);
      localStorage.setItem('growthOS_captionsHistory', JSON.stringify(newHistory));
   };
@@ -178,7 +198,7 @@ export default function CaptionsPage() {
                  {showHistory && (
                    <div className="divide-y divide-slate-800">
                      {history.map((h, i) => (
-                       <div key={i} className="p-4 flex justify-between items-center group cursor-pointer hover:bg-slate-950/50 transition-colors" onClick={() => {setProductDescription(h.description); setCaptions(h.captions); setPlatform(h.platform || 'Instagram')}}>
+                       <div key={i} className="p-4 flex justify-between items-center group cursor-pointer hover:bg-slate-950/50 transition-colors" onClick={() => {setProductDescription(h.description); setCaptions(h.captions); setLiveTexts(h.captions.map((v: any) => v.caption + '\n\n' + (v.hashtags?.join(' ') || ''))); setPlatform(h.platform || 'Instagram')}}>
                          <div className="truncate pr-4 flex-1">
                            <div className="text-xs text-slate-500 mb-1">{new Date(h.timestamp).toLocaleDateString()} • {h.platform}</div>
                            <div className="text-sm text-slate-300 truncate">{h.description}</div>
@@ -211,50 +231,159 @@ export default function CaptionsPage() {
                 </div>
                 
                 <div className="space-y-6">
-                  {captions.map((variation, idx) => (
-                    <div key={idx} className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden hover:border-indigo-500/30 transition-colors">
-                      {/* Card Header */}
-                      <div className="px-6 py-4 border-b border-slate-800 bg-slate-900 flex justify-between items-center group">
-                         <div className="font-bold text-white flex items-center gap-2">
-                            <span className="w-6 h-6 rounded-full bg-slate-800 flex items-center justify-center text-xs text-indigo-400 border border-slate-700">{idx+1}</span>
-                            {variation.tone}
-                         </div>
-                         {(platform === 'Twitter' && variation.characterCount > 280) && (
-                           <div className="flex items-center gap-1 text-xs text-red-400 bg-red-500/10 px-2 py-1 rounded border border-red-500/20">
-                             <AlertTriangle className="w-3 h-3"/> Too long
+                  {captions.map((variation, idx) => {
+                    const liveText = liveTexts[idx] || (variation.caption + '\n\n' + (variation.hashtags?.join(' ') || ''));
+                    const captionOnlyText = variation.caption || '';
+                    const hashtagsArr: string[] = variation.hashtags || [];
+
+                    return (
+                      <div key={idx} className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden hover:border-indigo-500/30 transition-colors">
+                        {/* Card Header */}
+                        <div className="px-6 py-4 border-b border-slate-800 bg-slate-900 flex justify-between items-center group">
+                           <div className="font-bold text-white flex items-center gap-2">
+                              <span className="w-6 h-6 rounded-full bg-slate-800 flex items-center justify-center text-xs text-indigo-400 border border-slate-700">{idx+1}</span>
+                              {variation.tone}
                            </div>
-                         )}
+                           <div className="flex items-center gap-3">
+                             {(platform === 'Twitter' && variation.characterCount > 280) && (
+                               <div className="flex items-center gap-1 text-xs text-red-400 bg-red-500/10 px-2 py-1 rounded border border-red-500/20">
+                                 <AlertTriangle className="w-3 h-3"/> Too long
+                               </div>
+                             )}
+                             {/* ═══ ML MODULE 2: ENGAGEMENT SCORE ═══ */}
+                             <EngagementScore caption={liveText} platform={platform} />
+                           </div>
+                        </div>
+
+                        {/* Card Body */}
+                        <div className="p-6">
+                           <div className="mb-4">
+                             <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2">Editable Caption</div>
+                             <textarea 
+                               className="w-full bg-slate-950 border border-transparent hover:border-slate-800 p-4 rounded-xl text-sm leading-relaxed text-slate-300 resize-y focus:outline-none focus:border-indigo-500/50 min-h-[120px]"
+                               defaultValue={variation.caption + '\n\n' + (variation.hashtags?.join(' ') || '')}
+                               onChange={e => {
+                                 const newTexts = [...liveTexts];
+                                 newTexts[idx] = e.target.value;
+                                 setLiveTexts(newTexts);
+                               }}
+                             />
+                           </div>
+
+                           <div className="bg-indigo-500/5 border border-indigo-500/10 rounded-lg p-3 text-xs text-indigo-200 flex items-start gap-2 mb-4">
+                              <Sparkles className="w-4 h-4 shrink-0 mt-0.5"/>
+                              <p><strong>Why this works:</strong> {variation.whyItWorks}</p>
+                           </div>
+
+                           {/* ═══ ML MODULE 3: HASHTAG ANALYZER ═══ */}
+                           {hashtagsArr.length > 0 && (
+                             <HashtagAnalyzer
+                               hashtags={hashtagsArr}
+                               captionText={captionOnlyText}
+                               industry={profile?.industry || 'retail'}
+                             />
+                           )}
+
+                           <div className="flex flex-wrap gap-2 pt-4 border-t border-slate-800 mt-4">
+                             <button onClick={(e) => {
+                               const el = e.currentTarget.parentElement?.parentElement?.querySelector('textarea');
+                               if(el) copyToClipboard((el as HTMLTextAreaElement).value);
+                             }} className="px-4 py-2 bg-white text-slate-900 font-bold text-sm rounded-lg hover:bg-slate-200 transition-colors flex items-center gap-2">
+                               <Copy className="w-4 h-4"/> Copy
+                             </button>
+                             <button 
+                               onClick={async () => {
+                                  setGeneratingVisualFor(idx);
+                                  try {
+                                    const prompt = await buildAIImagePrompt(
+                                      profile.name, profile.industry, liveText.substring(0, 50), profile.brandTone, null, 'photorealistic'
+                                    );
+                                    const format = SOCIAL_FORMATS.find(f => f.name === 'instagram_post')!;
+                                    const urls = buildVariationUrls(prompt, format, 4, 'flux');
+                                    setGeneratedVisualsMap(prev => ({...prev, [idx]: urls}));
+                                  } catch (err) {
+                                    alert("Failed to generate visuals");
+                                  } finally {
+                                    setGeneratingVisualFor(null);
+                                  }
+                               }}
+                               className="px-4 py-2 bg-brand-orange text-white font-bold text-sm rounded-lg hover:bg-brand-orange/80 transition-colors flex items-center gap-2 shadow-lg shadow-brand-orange/20"
+                             >
+                               {generatingVisualFor === idx ? <Loader2 className="w-4 h-4 animate-spin"/> : <ImageIcon className="w-4 h-4"/>}
+                               Generate Matching Image
+                             </button>
+                           </div>
+
+                           {/* Inline Visual Studio for this caption */}
+                           {generatedVisualsMap[idx] && generatedVisualsMap[idx].length > 0 && (
+                              <div className="mt-4 p-4 bg-black/40 border border-slate-800 rounded-xl space-y-4">
+                                 <h4 className="text-xs font-bold text-white uppercase flex items-center gap-2">
+                                    <Sparkles size={14} className="text-brand-orange" /> Pick an Image
+                                 </h4>
+                                 
+                                 {!selectedVisualMap[idx] ? (
+                                   <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                                      {generatedVisualsMap[idx].map((url, imgIdx) => (
+                                         <div key={imgIdx} onClick={() => setSelectedVisualMap(prev => ({...prev, [idx]: url}))} className="aspect-square bg-slate-900 rounded-lg overflow-hidden relative cursor-pointer border border-transparent hover:border-brand-orange transition-all group">
+                                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                                            <img referrerPolicy="no-referrer" src={url} alt="Variation" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                                         </div>
+                                      ))}
+                                   </div>
+                                 ) : (
+                                   <div className="flex flex-col md:flex-row gap-4 items-center">
+                                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                                      <img referrerPolicy="no-referrer" src={selectedVisualMap[idx]!} alt="Selected" className="w-32 h-32 object-cover rounded-lg border border-brand-orange" />
+                                      <div className="flex-1 space-y-2">
+                                         <button 
+                                           onClick={async () => {
+                                             setZippingFor(idx);
+                                             try {
+                                               const zip = new JSZip();
+                                               zip.file("caption.txt", liveText);
+                                               
+                                               // Download main image (1x1)
+                                               const blobSq = await downloadPollinationsImage(selectedVisualMap[idx]!);
+                                               zip.file("image_1080x1080.jpg", blobSq);
+
+                                               // Bonus: Download story version (9x16) of the SAME SEED logic (simplified: we just fetch another with a story format)
+                                               // In a perfect world, we'd reconstruct the pollinations URL with new dimensions but same seed.
+                                               const urlObj = new URL(selectedVisualMap[idx]!);
+                                               urlObj.searchParams.set("width", "1080");
+                                               urlObj.searchParams.set("height", "1920");
+                                               const blobStory = await downloadPollinationsImage(urlObj.toString());
+                                               zip.file("image_1080x1920.jpg", blobStory);
+
+                                               const content = await zip.generateAsync({type:"blob"});
+                                               const link = document.createElement('a');
+                                               link.href = URL.createObjectURL(content);
+                                               link.download = `GrowthOS_PostSet_${Date.now()}.zip`;
+                                               link.click();
+                                             } catch(e) {
+                                               alert("ZIP export failed");
+                                             } finally {
+                                               setZippingFor(null);
+                                             }
+                                           }}
+                                           disabled={zippingFor === idx}
+                                           className="w-full py-2 bg-white text-black font-bold text-sm rounded-lg hover:bg-slate-200 transition-colors flex items-center justify-center gap-2"
+                                         >
+                                            {zippingFor === idx ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+                                            Download Caption + Image Set (ZIP)
+                                         </button>
+                                         <button onClick={() => setSelectedVisualMap(prev => ({...prev, [idx]: null}))} className="w-full py-2 bg-slate-800 text-white font-bold text-sm rounded-lg hover:bg-slate-700 transition-colors">
+                                           Choose Different Image
+                                         </button>
+                                      </div>
+                                   </div>
+                                 )}
+                              </div>
+                           )}
+
+                        </div>
                       </div>
-
-                      {/* Card Body */}
-                      <div className="p-6">
-                         <div className="mb-4">
-                           <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2">Editable Caption</div>
-                           <textarea 
-                             className="w-full bg-slate-950 border border-transparent hover:border-slate-800 p-4 rounded-xl text-sm leading-relaxed text-slate-300 resize-y focus:outline-none focus:border-indigo-500/50 min-h-[120px]"
-                             defaultValue={variation.caption + '\n\n' + (variation.hashtags?.join(' ') || '')}
-                           />
-                         </div>
-
-                         <div className="bg-indigo-500/5 border border-indigo-500/10 rounded-lg p-3 text-xs text-indigo-200 flex items-start gap-2 mb-6">
-                            <Sparkles className="w-4 h-4 shrink-0 mt-0.5"/>
-                            <p><strong>Why this works:</strong> {variation.whyItWorks}</p>
-                         </div>
-
-                         <div className="flex flex-wrap gap-2 pt-4 border-t border-slate-800">
-                           <button onClick={(e) => {
-                             const el = e.currentTarget.parentElement?.previousElementSibling?.previousElementSibling?.querySelector('textarea');
-                             if(el) copyToClipboard((el as HTMLTextAreaElement).value);
-                           }} className="px-4 py-2 bg-white text-slate-900 font-bold text-sm rounded-lg hover:bg-slate-200 transition-colors flex items-center gap-2">
-                             <Copy className="w-4 h-4"/> Base Text + Hashtags
-                           </button>
-                           <button onClick={() => alert('Sending to A/B tracker...')} className="px-4 py-2 bg-slate-800 text-white font-medium text-sm rounded-lg hover:bg-slate-700 transition-colors border border-slate-700">
-                             Track Performance
-                           </button>
-                         </div>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </>
             ) : (

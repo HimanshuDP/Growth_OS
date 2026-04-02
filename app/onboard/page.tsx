@@ -4,13 +4,15 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { db } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { Building2, Globe, Users, Target, Loader2, Sparkles, AlertCircle } from 'lucide-react';
+import { Building2, Globe, Users, Target, Loader2, Sparkles, AlertCircle, CheckCircle2, ArrowRight } from 'lucide-react';
 import { FALLBACK_DATA } from '@/lib/fallback-data';
+import { runAutopilot } from '@/lib/autopilot';
 
 export default function OnboardPage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
   const [loadingMessageIdx, setLoadingMessageIdx] = useState(0);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -33,10 +35,11 @@ export default function OnboardPage() {
   });
 
   const loadingMessages = [
-    "Analyzing your business...",
-    "Understanding your market...",
-    "Identifying festival opportunities...",
-    "Building your growth strategy..."
+    "Business profile ready ✓",
+    "Analyzing upcoming festivals...",
+    "Building your first content calendar...",
+    "Preparing ad recommendations...",
+    "Everything is ready for your review!"
   ];
 
   const handlePlatformChange = (platform: string) => {
@@ -121,8 +124,17 @@ export default function OnboardPage() {
          // FAST PATH FOR DEMO: Simulate processing but use predefined response instantly
          await new Promise(r => setTimeout(r, 4500)); // Sleep just enough to show UI
          const demoData = FALLBACK_DATA.businesses.mumbaiMithai.profile;
-         localStorage.setItem('growthOS_businessProfile', JSON.stringify({ ...formData, ...demoData }));
-         router.push('/dashboard');
+         const profile = { ...formData, ...demoData };
+         localStorage.setItem('growthOS_businessProfile', JSON.stringify(profile));
+         
+         await runAutopilot(profile, (task) => {
+           // Advance loading message idx based on task type to simulate progress
+           setLoadingMessageIdx(prev => Math.min(prev + 1, loadingMessages.length - 1));
+         });
+
+         clearInterval(msgInterval);
+         setLoading(false);
+         setSuccess(true);
          return;
       }
 
@@ -158,8 +170,14 @@ export default function OnboardPage() {
         console.log('Firebase skip: not configured or blocked', err);
       }
 
+      // Run autopilot
+      await runAutopilot(combinedProfile, (task) => {
+        setLoadingMessageIdx(prev => Math.min(prev + 1, loadingMessages.length - 1));
+      });
+
       clearInterval(msgInterval);
-      router.push('/dashboard');
+      setLoading(false);
+      setSuccess(true);
     } catch (error) {
       console.error('Submission failed', error);
       clearInterval(msgInterval);
@@ -168,16 +186,59 @@ export default function OnboardPage() {
     }
   };
 
+  if (success) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-white p-4">
+        <div className="w-24 h-24 rounded-full bg-brand-teal/20 flex items-center justify-center mb-8 animate-in zoom-in duration-500">
+          <CheckCircle2 className="w-12 h-12 text-brand-teal" />
+        </div>
+        <h2 className="text-3xl md:text-4xl font-extrabold mb-8 animate-in slide-in-from-bottom-4 duration-500 delay-150">
+          Your GrowthOS is ready! 🚀
+        </h2>
+        
+        <div className="flex flex-col gap-3 mb-10 w-full max-w-sm animate-in slide-in-from-bottom-4 duration-500 delay-300">
+          <div className="bg-white/5 border border-white/10 rounded-xl p-4 flex items-center gap-3">
+            <span className="text-xl">📅</span>
+            <span className="font-medium text-white/90">7-day calendar created</span>
+          </div>
+          <div className="bg-white/5 border border-white/10 rounded-xl p-4 flex items-center gap-3">
+            <span className="text-xl">🎉</span>
+            <span className="font-medium text-white/90">3 festival campaigns prepared</span>
+          </div>
+          <div className="bg-white/5 border border-white/10 rounded-xl p-4 flex items-center gap-3">
+            <span className="text-xl">📢</span>
+            <span className="font-medium text-white/90">3 ad strategies ready</span>
+          </div>
+        </div>
+
+        <div className="flex flex-col items-center gap-4 animate-in slide-in-from-bottom-4 duration-500 delay-500">
+          <button 
+            onClick={() => router.push('/approvals')}
+            className="px-8 py-3.5 rounded-xl bg-brand-orange text-white font-bold hover:bg-brand-orange/80 transition-colors shadow-lg shadow-brand-orange/20 flex items-center gap-2 text-lg"
+          >
+            Review & Approve <ArrowRight size={20} />
+          </button>
+          <button 
+            onClick={() => router.push('/dashboard')}
+            className="text-sm text-white/40 hover:text-white transition-colors"
+          >
+            Go to Dashboard instead
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0F172A] flex flex-col items-center justify-center text-white">
-        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center animate-bounce mb-8 shadow-[0_0_30px_rgba(99,102,241,0.5)]">
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-white">
+        <div className="w-16 h-16 rounded-2xl bg-gradient-saffron flex items-center justify-center animate-bounce mb-8 shadow-lg shadow-brand-orange/20">
           <span className="font-bold text-white text-3xl">G</span>
         </div>
-        <Loader2 className="w-8 h-8 animate-spin text-indigo-400 mb-6" />
-        <h2 className="text-2xl font-bold animate-pulse">{loadingMessages[loadingMessageIdx]}</h2>
+        <Loader2 className="w-8 h-8 animate-spin text-brand-orange mb-6" />
+        <h2 className="text-2xl font-bold">{loadingMessages[loadingMessageIdx]}</h2>
         <p className="text-slate-400 mt-4 text-center max-w-sm">
-          Please wait as our AI engine constructs your custom 360° marketing foundation.
+          Please wait as our AI constructs your autonomous marketing engine.
         </p>
       </div>
     );

@@ -7,7 +7,7 @@ function cn(...inputs: ClassValue[]) {
 }
 
 const Skeleton = ({ className }: { className?: string }) => (
-  <div className={cn("animate-pulse bg-white/10 rounded-xl", className)} />
+  <div className={cn("skeleton-shimmer bg-bg-card rounded-xl", className)} />
 );
 
 export const CalendarSkeleton = () => (
