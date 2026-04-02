@@ -2,7 +2,8 @@
 
 import React, { useState, useRef } from 'react';
 import { generatePollinationsVideo } from '@/lib/pollinations';
-import { Loader2, Video as VideoIcon, Download, Sparkles, RefreshCw, Smartphone } from 'lucide-react';
+import { Loader2, Video as VideoIcon, Download, Sparkles, RefreshCw, Smartphone, Share2 } from 'lucide-react';
+import PostToSocialModal from '@/components/social/PostToSocialModal';
 
 export default function VideoCreatorTab() {
   const [mode, setMode] = useState<'ai' | 'animator'>('ai');
@@ -12,6 +13,8 @@ export default function VideoCreatorTab() {
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationError, setGenerationError] = useState<string | null>(null);
+  const [showSocialModal, setShowSocialModal] = useState(false);
+  const [socialCaption, setSocialCaption] = useState('');
 
   // Mode B State
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -156,6 +159,7 @@ export default function VideoCreatorTab() {
   };
 
   return (
+    <>
     <div className="flex flex-col lg:flex-row gap-8 h-full min-h-[800px]">
        
        {/* LEFT PANEL */}
@@ -285,8 +289,17 @@ export default function VideoCreatorTab() {
                 {videoUrl && !isGenerating && (
                   <div className="flex flex-col items-center w-full max-w-md animate-in zoom-in-95">
                     <video src={videoUrl} controls autoPlay loop className="w-full rounded-2xl border border-slate-700 shadow-2xl" />
-                    <button onClick={() => downloadVideo(videoUrl, 'growthos_ai_video.mp4')} className="mt-6 w-full py-4 bg-brand-orange text-white font-bold rounded-xl hover:bg-brand-orange/80 flex items-center justify-center gap-2">
-                       <Download size={20} /> Download MP4
+                    <button
+                      onClick={() => {
+                        setSocialCaption(`🎬 Check out our latest video! ${videoPrompt}`);
+                        setShowSocialModal(true);
+                      }}
+                      className="mt-4 w-full py-4 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-orange-500/30 transition-all flex items-center justify-center gap-2"
+                    >
+                      <Share2 size={20} /> Post to Social Media
+                    </button>
+                    <button onClick={() => downloadVideo(videoUrl, 'growthos_ai_video.mp4')} className="mt-2 w-full py-3 border border-slate-700 text-slate-300 font-semibold rounded-xl hover:bg-slate-800 transition-all flex items-center justify-center gap-2">
+                       <Download size={18} /> Download MP4
                     </button>
                   </div>
                 )}
@@ -306,16 +319,39 @@ export default function VideoCreatorTab() {
                  </div>
 
                  {recordedBlob && (
-                    <button 
-                      onClick={() => downloadVideo(URL.createObjectURL(recordedBlob), 'growthos_animated.webm')} 
-                      className="mt-6 w-full py-4 bg-brand-teal text-black font-bold rounded-xl hover:bg-brand-teal/80 flex items-center justify-center gap-2 animate-in slide-in-from-bottom-2"
-                    >
-                       <Download size={20} /> Save Video (WebM)
-                    </button>
+                    <div className="mt-4 w-full space-y-2 animate-in slide-in-from-bottom-2">
+                      <button
+                        onClick={() => {
+                          setSocialCaption(`🎨 Created with GrowthOS — ${animConfig.headline}`);
+                          setShowSocialModal(true);
+                        }}
+                        className="w-full py-4 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-orange-500/30 transition-all flex items-center justify-center gap-2"
+                      >
+                        <Share2 size={20} /> Post to Social Media
+                      </button>
+                      <button 
+                        onClick={() => downloadVideo(URL.createObjectURL(recordedBlob), 'growthos_animated.webm')} 
+                        className="w-full py-3 border border-slate-700 text-slate-300 font-semibold rounded-xl hover:bg-slate-800 transition-all flex items-center justify-center gap-2"
+                      >
+                         <Download size={18} /> Save Video (WebM)
+                      </button>
+                    </div>
                  )}
               </div>
            )}
        </div>
     </div>
+
+    {/* Post to Social Modal */}
+    <PostToSocialModal
+      isOpen={showSocialModal}
+      onClose={() => setShowSocialModal(false)}
+      videoBlob={recordedBlob || undefined}
+      videoUrl={videoUrl || undefined}
+      mediaType="video"
+      initialCaption={socialCaption}
+      initialHashtags={['GrowthOS', 'AIMarketing', 'DigitalMarketing', 'IndianSME']}
+    />
+    </>
   );
 }
