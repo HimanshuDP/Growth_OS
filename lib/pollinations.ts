@@ -74,7 +74,7 @@ export const SOCIAL_FORMATS: SocialFormat[] = [
 export function buildPollinationsImageUrl(
   prompt: string,
   format: SocialFormat,
-  model: ImageModel = "flux",
+  model: ImageModel = "turbo",
   seed?: number,
 ): string {
   const encodedPrompt = encodeURIComponent(prompt);
@@ -149,7 +149,8 @@ export async function generatePollinationsVideo(
 ): Promise<string> {
   // returns blob URL
   const encodedPrompt = encodeURIComponent(prompt);
-  const rawUrl = `https://video.pollinations.ai/prompt/${encodedPrompt}?model=${model}&nologo=true`;
+  // Using image.pollinations.ai which acts as unified router since video.pollinations.ai DNS is frequently blocked/down.
+  const rawUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?model=${model}&nologo=true`;
   const proxiedUrl = getProxiedImageUrl(rawUrl);
 
   const response = await fetch(proxiedUrl);
